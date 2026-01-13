@@ -7,6 +7,7 @@ import { ThreatActors } from "@/pages/ThreatActors";
 import { ThreatActorDetail } from "@/pages/ThreatActorDetail";
 import { Vulnerabilities } from "@/pages/Vulnerabilities";
 import { VulnerabilityDetail } from "@/pages/VulnerabilityDetail";
+import { Settings } from "@/pages/Settings";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route path="/threat-actors/:id" element={<ThreatActorDetail />} />
       <Route path="/vulnerabilities" element={<Vulnerabilities />} />
       <Route path="/vulnerabilities/:id" element={<VulnerabilityDetail />} />
+      <Route path="/settings" element={<Settings />} />
     </Routes>
   );
 }

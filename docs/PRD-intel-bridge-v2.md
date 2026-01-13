@@ -382,4 +382,195 @@ When disabled, the app uses a mock session for development/Playwright testing.
 
 ---
 
+## 6. Data Infrastructure (CRITICAL)
+
+### Overview
+
+V2 requires the same data infrastructure as V1 to function. The intel schema data comes from OpenCTI and is READ-ONLY. The public schema data is managed by the application and edge functions.
+
+### Phase 0: Database Setup [PRIORITY]
+
+Before any features work, the following must be in place:
+
+#### A. Intel Schema Access
+```sql
+-- Grant access to intel schema for API queries
+GRANT USAGE ON SCHEMA intel TO anon;
+GRANT USAGE ON SCHEMA intel TO authenticated;
+GRANT USAGE ON SCHEMA intel TO service_role;
+
+GRANT SELECT ON ALL TABLES IN SCHEMA intel TO anon;
+GRANT SELECT ON ALL TABLES IN SCHEMA intel TO authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA intel TO service_role;
+
+-- Expose intel schema via PostgREST
+ALTER ROLE authenticator SET pgrst.db_schemas TO 'public, intel';
+NOTIFY pgrst, 'reload config';
+```
+
+#### B. Required Public Schema Tables
+
+| Table | Purpose | Required For |
+|-------|---------|--------------|
+| `profiles` | User accounts | Auth, personalization |
+| `user_roles` | Admin/user roles | Access control |
+| `intel_summaries` | AI-generated briefings | Dashboard, Briefing page |
+| `intel_chat_sessions` | Chat history | Intel Chat |
+| `intel_chat_messages` | Chat messages | Intel Chat |
+| `user_intel_profiles` | User preferences | Personalized briefings |
+| `user_assets` | Registered domains/emails | Asset monitoring |
+| `domain_blacklist` | Excluded domains | Feed filtering |
+| `media_source_blacklist` | Excluded sources | Feed filtering |
+
+#### C. Edge Functions Required
+
+| Function | Purpose | Triggers |
+|----------|---------|----------|
+| `generate-intel-summary` | Daily AI briefing generation | Cron job, manual |
+| `intel-chat-mcp` | Conversational threat queries | Chat UI |
+| `generate-personalized-briefing` | User-specific briefings | User profile changes |
+
+### Data Flow Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     EXTERNAL DATA SOURCES                            │
+├─────────────────────────────────────────────────────────────────────┤
+│  [OpenCTI Platform]     [News Feeds]      [OpenAI API]              │
+│         │                    │                  │                    │
+│         ▼                    ▼                  ▼                    │
+│  intel.object_current   media_reports    AI Analysis                │
+│  intel.relationship_current                                         │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      SUPABASE DATABASE                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌─────────────────────────┐    ┌─────────────────────────────────┐│
+│  │    INTEL SCHEMA         │    │      PUBLIC SCHEMA               ││
+│  │    (Read-Only)          │    │      (Read-Write)                ││
+│  ├─────────────────────────┤    ├─────────────────────────────────┤│
+│  │ • object_current        │    │ • profiles                       ││
+│  │   - Intrusion-Set       │    │ • user_roles                     ││
+│  │   - Campaign            │    │ • intel_summaries                ││
+│  │   - Malware             │    │ • intel_chat_sessions            ││
+│  │   - Tool                │    │ • intel_chat_messages            ││
+│  │   - Attack-Pattern      │    │ • user_intel_profiles            ││
+│  │   - Indicator           │    │ • user_assets                    ││
+│  │   - Vulnerability       │    │ • domain_blacklist               ││
+│  │   - Report              │    │ • media_source_blacklist         ││
+│  │   - Country/Sector      │    │                                   ││
+│  │                         │    │                                   ││
+│  │ • relationship_current  │    │                                   ││
+│  │   - uses, targets       │    │                                   ││
+│  │   - exploits, indicates │    │                                   ││
+│  │   - attributed-to       │    │                                   ││
+│  └─────────────────────────┘    └─────────────────────────────────┘│
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      EDGE FUNCTIONS                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│  generate-intel-summary    │ Queries intel schema, generates AI     │
+│                            │ briefings, writes to intel_summaries   │
+│  ──────────────────────────┼──────────────────────────────────────  │
+│  intel-chat-mcp            │ Queries intel schema, uses OpenAI,     │
+│                            │ manages chat sessions/messages         │
+│  ──────────────────────────┼──────────────────────────────────────  │
+│  generate-personalized-    │ User-specific briefings based on       │
+│  briefing                  │ user_intel_profiles preferences        │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      REACT FRONTEND (V2)                            │
+├─────────────────────────────────────────────────────────────────────┤
+│  Data Hooks (TanStack Query)                                         │
+│  • useIntrusionSets, useVulnerabilities, etc. → intel schema        │
+│  • useIntelSummaries → public.intel_summaries                       │
+│  • useIntelChat → public.intel_chat_*                               │
+│  • useUserIntelProfile → public.user_intel_profiles                 │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### OpenCTI Data Population
+
+The `intel` schema is populated EXTERNALLY by OpenCTI. This happens via:
+
+1. **OpenCTI Stream Connector** - Streams STIX data to Supabase
+2. **Scheduled Sync Job** - Periodic full sync from OpenCTI GraphQL API
+3. **Manual Import** - STIX JSON bundle import
+
+**Important:** V2 does NOT populate the intel schema - it only READS from it.
+
+### Implementation Checklist
+
+- [ ] Run database migrations to create public schema tables
+- [ ] Configure intel schema permissions (GRANT statements)
+- [ ] Deploy `generate-intel-summary` edge function
+- [ ] Deploy `intel-chat-mcp` edge function
+- [ ] Set up pg_cron for daily summary generation
+- [ ] Verify OpenCTI data sync is running
+- [ ] Test intel schema queries return data
+
+---
+
+## 7. Migration from V1
+
+### Files to Copy from V1
+
+| Source (intelbridgeapp) | Destination (intelbridgev2) | Purpose |
+|------------------------|----------------------------|---------|
+| `supabase/migrations/*.sql` | `supabase/migrations/` | Database schema |
+| `supabase/functions/*` | `supabase/functions/` | Edge functions |
+| `supabase/config.toml` | `supabase/config.toml` | Supabase config |
+
+### Database Migrations Required
+
+From V1's 55 migrations, the essential ones for V2:
+
+1. **User Management**
+   - profiles, user_roles tables
+   - RLS policies for user data
+
+2. **Intel Summaries**
+   - intel_summaries table with all analysis fields
+   - intel_summary_generation_progress
+   - intel_summary_metrics
+
+3. **Intel Chat**
+   - intel_chat_sessions
+   - intel_chat_messages
+   - Chat-related functions and triggers
+
+4. **User Preferences**
+   - user_intel_profiles
+   - user_assets (for asset monitoring)
+
+5. **Intel Schema Access**
+   - GRANT statements for intel schema
+   - PostgREST schema exposure
+
+### Edge Functions Required
+
+1. **generate-intel-summary** (CRITICAL)
+   - Multi-agent AI analysis
+   - Queries intel schema for threat data
+   - Generates executive summaries, TTPs, actor analysis
+   - Writes to intel_summaries table
+
+2. **intel-chat-mcp** (CRITICAL)
+   - Conversational threat intelligence
+   - Session management
+   - Source citations
+
+3. **generate-personalized-briefing** (OPTIONAL)
+   - User-specific briefings based on profile
+
+---
+
 *This PRD is designed for iterative development using the Ralph Loop workflow.*

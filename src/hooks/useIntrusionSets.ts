@@ -39,7 +39,8 @@ export interface PageInfo {
 }
 
 // Create intel schema client
-const intelDb = supabase.schema("intel");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const intelDb = (supabase as any).schema("intel");
 
 // Transform intel.object_current data to IntrusionSet format
 function transformIntrusionSet(row: any): IntrusionSet {
@@ -94,7 +95,7 @@ async function fetchIntrusionSets(
 
   // Fetch targeted countries and sectors
   if (intrusionSets.length > 0) {
-    const intrusionSetIds = intrusionSets.map((is) => is.id);
+    const intrusionSetIds = intrusionSets.map((is: IntrusionSet) => is.id);
 
     const { data: targetRels } = await intelDb
       .from("relationship_current")
@@ -115,7 +116,7 @@ async function fetchIntrusionSets(
       for (const is of intrusionSets) {
         const isRels = targetRels.filter((r: any) => r.source_id === is.id);
         for (const rel of isRels) {
-          const target = targetMap.get(rel.target_id);
+          const target = targetMap.get(rel.target_id) as any;
           if (target) {
             if (target.entity_type === "Country") {
               is.targetedCountries.push({ id: target.internal_id, name: target.name });
@@ -337,7 +338,7 @@ async function fetchIntrusionSetDetail(id: string): Promise<IntrusionSetDetail |
       const apMap = new Map(usedAttackPatterns.map((ap) => [ap.id, ap]));
 
       for (const rel of mitigationRels) {
-        const coa = coaMap.get(rel.source_id);
+        const coa = coaMap.get(rel.source_id) as any;
         const ap = apMap.get(rel.target_id);
         if (coa && ap) {
           const coaData = coa.data || {};

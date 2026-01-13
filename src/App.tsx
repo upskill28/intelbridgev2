@@ -9,6 +9,8 @@ import { Vulnerabilities } from "@/pages/Vulnerabilities";
 import { VulnerabilityDetail } from "@/pages/VulnerabilityDetail";
 import { Settings } from "@/pages/Settings";
 import { Assets } from "@/pages/Assets";
+import { IOCSearch } from "@/pages/IOCSearch";
+import { HistoricalTrends } from "@/pages/HistoricalTrends";
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
       <Route path="/vulnerabilities/:id" element={<VulnerabilityDetail />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/assets" element={<Assets />} />
+      <Route path="/ioc-search" element={<IOCSearch />} />
+      <Route path="/trends" element={<HistoricalTrends />} />
     </Routes>
   );
 }

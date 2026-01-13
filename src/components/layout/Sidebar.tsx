@@ -10,6 +10,8 @@ import {
   Users,
   AlertTriangle,
   Package,
+  Target,
+  TrendingUp,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +20,8 @@ const navItems = [
   { icon: Rss, label: "Threat Feed", path: "/feed" },
   { icon: Users, label: "Threat Actors", path: "/threat-actors" },
   { icon: AlertTriangle, label: "Vulnerabilities", path: "/vulnerabilities" },
+  { icon: Target, label: "IOC Search", path: "/ioc-search" },
+  { icon: TrendingUp, label: "Trends", path: "/trends" },
   { icon: Package, label: "Assets", path: "/assets" },
   { icon: MessageSquare, label: "Intel Chat", path: "/chat" },
 ];

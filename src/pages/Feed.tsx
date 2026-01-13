@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useIntelSummaries } from "@/hooks/useIntelSummaries";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,7 +21,6 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import type {
-  IntelSummary,
   MediaSummary,
   ThreatSummary,
   AdvisorySummary,

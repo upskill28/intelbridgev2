@@ -14,7 +14,8 @@ export interface IntelOptions {
   threatActors: IntelOption[];
 }
 
-const intelDb = supabase.schema("intel");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const intelDb = (supabase as any).schema("intel");
 
 async function fetchIntelOptions(): Promise<IntelOptions> {
   const [sectorsResult, countriesResult, regionsResult, threatActorsResult] = await Promise.all([

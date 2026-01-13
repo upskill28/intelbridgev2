@@ -38,7 +38,8 @@ export interface PageInfo {
 }
 
 // Create intel schema client
-const intelDb = supabase.schema("intel");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const intelDb = (supabase as any).schema("intel");
 
 // Get severity color
 export function getSeverityColor(severity: string): string {

@@ -9,6 +9,7 @@ import {
   Shield,
   Users,
   AlertTriangle,
+  Package,
 } from "lucide-react";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { icon: Rss, label: "Threat Feed", path: "/feed" },
   { icon: Users, label: "Threat Actors", path: "/threat-actors" },
   { icon: AlertTriangle, label: "Vulnerabilities", path: "/vulnerabilities" },
+  { icon: Package, label: "Assets", path: "/assets" },
   { icon: MessageSquare, label: "Intel Chat", path: "/chat" },
 ];
 

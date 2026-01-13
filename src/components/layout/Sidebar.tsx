@@ -7,12 +7,16 @@ import {
   MessageSquare,
   Settings,
   Shield,
+  Users,
+  AlertTriangle,
 } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: FileText, label: "Daily Briefing", path: "/briefing" },
   { icon: Rss, label: "Threat Feed", path: "/feed" },
+  { icon: Users, label: "Threat Actors", path: "/threat-actors" },
+  { icon: AlertTriangle, label: "Vulnerabilities", path: "/vulnerabilities" },
   { icon: MessageSquare, label: "Intel Chat", path: "/chat" },
 ];
 
